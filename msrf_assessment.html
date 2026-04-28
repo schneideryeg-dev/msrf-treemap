@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MSRF — Municipal Service Assessment Tool</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Playfair+Display:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body,#root{height:100%}
+body{font-family:'DM Mono',monospace;font-size:13px;background:#f2f5f9;color:#0d1b2e}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#c8d8e8;border-radius:3px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useMemo, useCallback } = React;
+
+const SERVICES = [{"id": "CS-001", "pa": "Community Services", "sa": "Community Engagement", "sn": "Community Events & Festivals", "type": "External", "desc": "Plans, permits and coordinates civic festivals and community gatherings to foster social connection and local economic vitality."}, {"id": "CS-002", "pa": "Community Services", "sa": "Community Engagement", "sn": "Volunteer & Grant Administration", "type": "External", "desc": "Recruits volunteers and administers community grant streams to support non-profit organizations and enhance civic engagement."}, {"id": "CS-003", "pa": "Community Services", "sa": "Parks & Open Spaces", "sn": "Parks & Open Space Management", "type": "External", "desc": "Maintains parks, green space, trails, and urban forestry to provide safe and aesthetically pleasing outdoor environments."}, {"id": "CS-004", "pa": "Community Services", "sa": "Parks & Open Spaces", "sn": "Cemetery Services", "type": "External", "desc": "Manages municipal cemeteries to provide dignified interment options and well-maintained memorial grounds for families and the community."}, {"id": "CS-008", "pa": "Community Services", "sa": "Program Management & Administration", "sn": "General Administration", "type": "Operating Budget", "desc": "Provides strategic leadership and administrative oversight to ensure the effective delivery of Community Services."}, {"id": "CS-005", "pa": "Community Services", "sa": "Recreation Services", "sn": "Recreation & Wellness Programming", "type": "External", "desc": "Delivers diverse recreational, cultural  and wellness programs (e.g. youth, seniors, arts) to promote active living and skill development."}, {"id": "CS-006", "pa": "Community Services", "sa": "Recreation Services", "sn": "Aquatics & Arena Operations", "type": "External", "desc": "Operates aquatic centers, arenas,  and multi-use facilities to support sport fitness, and community events."}, {"id": "CS-007", "pa": "Community Services", "sa": "Recreation Services", "sn": "Child Care Services", "type": "External", "desc": "Provides licensed child care programs and manages facility partnerships to support working families and child development."}, {"id": "COR-001", "pa": "Corporate Services", "sa": "Corporate Strategy & Policy", "sn": "Performance Measurement & Analytics", "type": "Internal", "desc": "Collects, analyzes, and visualizes data to track progress against strategic goals and inform evidence-based decision making. "}, {"id": "COR-002", "pa": "Corporate Services", "sa": "Customer Service", "sn": "Customer Service & Service Desk", "type": "Internal", "desc": "Provides a central intake point for resident inquiries, service requests, and payments to ensure consistent and timely resolution."}, {"id": "COR-003", "pa": "Corporate Services", "sa": "Facility Services", "sn": "Facility Operations & Maintenance", "type": "Internal", "desc": "Operates, repairs, and maintains mechanical, electrical, and life-safety systems to ensure municipal facilities are safe, functional, and energy-efficient for occupants."}, {"id": "COR-004", "pa": "Corporate Services", "sa": "Facility Services", "sn": "Facility Soft Services", "type": "Internal", "desc": "Delivers custodial, security, and groundskeeping services to maintain safe, hygienic, and accessible environments at municipal properties."}, {"id": "COR-005", "pa": "Corporate Services", "sa": "Facility Services", "sn": "Facility Asset Management", "type": "Internal", "desc": "Manages the long-term lifecycle of facility assets through condition assessments, space planning, and capital renewal strategies to optimize portfolio value."}, {"id": "COR-006", "pa": "Corporate Services", "sa": "Finance & Accounting", "sn": "Budgeting & Financial Planning", "type": "Internal", "desc": "Leads the development of operating and capital budgets to ensure financial sustainability and alignment with Council priorities."}, {"id": "COR-007", "pa": "Corporate Services", "sa": "Finance & Accounting", "sn": "Property Assessment Services", "type": "External", "desc": "Determines the market value of properties in accordance with provincial legislation to ensure a fair and equitable distribution of the tax burden."}, {"id": "COR-008", "pa": "Corporate Services", "sa": "Finance & Accounting", "sn": "Financial Management & Reporting", "type": "Internal", "desc": "Oversees core accounting operations, financial reporting, and internal controls to ensure the accuracy, transparency, and integrity of municipal financial resources."}, {"id": "COR-009", "pa": "Corporate Services", "sa": "Finance & Accounting", "sn": "Taxation Services", "type": "External", "desc": "Administers the billing, collection, and processing of property taxes and local improvement levies to ensure revenue stability for municipal operations."}, {"id": "COR-010", "pa": "Corporate Services", "sa": "Human Resources", "sn": "Workforce Management", "type": "Internal", "desc": "Strategizes and manages the full employee lifecycle—from recruitment and payroll to safety and development—to ensure a skilled, engaged, and compliant municipal workforce."}, {"id": "COR-011", "pa": "Corporate Services", "sa": "Information Technology", "sn": "Information Technology Operations", "type": "Internal", "desc": "Provides and maintains user hardware, software, and helpdesk support to ensure staff have the digital tools required to work."}, {"id": "COR-012", "pa": "Corporate Services", "sa": "Information Technology", "sn": "Network & Infrastructure Management", "type": "Internal", "desc": "Manages the servers, data centers, and network connectivity that form the digital backbone of municipal operations."}, {"id": "COR-016", "pa": "Corporate Services", "sa": "Information Technology", "sn": "GIS & Mapping Services", "type": "Internal", "desc": "Captures, manages, and analyzes geospatial data to visualize complex information, support asset management, and inform decision-making across the organization."}, {"id": "COR-013", "pa": "Corporate Services", "sa": "Information Technology", "sn": "Cybersecurity & Risk", "type": "Internal", "desc": "Protects the municipality’s digital infrastructure and sensitive data from cyber threats through proactive monitoring, risk mitigation, and incident response to ensure operational resilience and public trust."}, {"id": "COR-014", "pa": "Corporate Services", "sa": "Procurement", "sn": "Procurement & Contracting", "type": "Internal", "desc": "Manages the acquisition of goods and services to ensure best value, fair competition, and compliance with trade agreements."}, {"id": "COR-015", "pa": "Corporate Services", "sa": "Records & FOIP", "sn": "Records Management & FOIP", "type": "Internal", "desc": "Manages the lifecycle of corporate records and ensures organizational compliance with Freedom of Information and privacy legislation."}, {"id": "ADM-001", "pa": "Council & Administrative Leadership", "sa": "CAO & Executive", "sn": "CAO Office Support", "type": "Internal", "desc": "Provides executive leadership and administrative oversight to the organization to ensure the effective implementation of Council's direction."}, {"id": "ADM-010", "pa": "Council & Administrative Leadership", "sa": "CAO & Executive", "sn": "Legal & Risk Management", "type": "Internal", "desc": "Provides legal counsel, litigation support, and risk management advice to Council and Administration to protect municipal interests and ensure legislative compliance."}, {"id": "ADM-002", "pa": "Council & Administrative Leadership", "sa": "Communications & Engagement", "sn": "Communications & Engagement", "type": "Internal", "desc": "Manages external communications, media relations, and brand strategy to keep residents informed and connected to their municipality."}, {"id": "ADM-003", "pa": "Council & Administrative Leadership", "sa": "Communications & Engagement", "sn": "Public Consultation Services", "type": "External", "desc": "Designs and facilitates public engagement opportunities to ensure resident feedback informs municipal project and policy decisions."}, {"id": "ADM-004", "pa": "Council & Administrative Leadership", "sa": "Corporate Strategy & Policy", "sn": "Corporate Policy Management", "type": "Internal", "desc": "Develops and maintains administrative policies and directives (e.g., HR, Safety, IT) to ensure consistent and compliant organizational operations."}, {"id": "ADM-005", "pa": "Council & Administrative Leadership", "sa": "Corporate Strategy & Policy", "sn": "Intergovernmental Affairs", "type": "Internal", "desc": "Manages relationships and advocacy with other levels of government to secure funding, influence policy, and advance municipal interests."}, {"id": "ADM-006", "pa": "Council & Administrative Leadership", "sa": "Corporate Strategy & Policy", "sn": "Corporate Strategic Planning", "type": "Internal", "desc": "Facilitates the development and monitoring of the Council Strategic Plan to align organizational resources with community priorities."}, {"id": "ADM-011", "pa": "Council & Administrative Leadership", "sa": "Corporate Strategy & Policy", "sn": "Indigenous Relations", "type": "Internal", "desc": "Leads reconciliation efforts and consults with Indigenous communities to build respectful partnerships and align municipal projects with Indigenous rights."}, {"id": "ADM-007", "pa": "Council & Administrative Leadership", "sa": "Legislative Governance", "sn": "Governance Policy & Advisory", "type": "Internal", "desc": "Provides procedural advice, training, and bylaw drafting support to Council and Committees to ensure robust governance practices."}, {"id": "ADM-008", "pa": "Council & Administrative Leadership", "sa": "Legislative Governance", "sn": "Legislative Operations", "type": "Internal", "desc": "Manages Council meetings, agendas, minutes, and bylaws to ensure transparent, efficient, and legally compliant democratic decision-making."}, {"id": "ADM-009", "pa": "Council & Administrative Leadership", "sa": "Legislative Governance", "sn": "Elections Management", "type": "Internal", "desc": "Plans and conducts municipal elections and census activities to ensure fair, open, and accessible democratic participation."}, {"id": "ED-001", "pa": "Economic Development & Tourism", "sa": "Business & Investment Development", "sn": "Business Attraction", "type": "External", "desc": "Proactively markets the community to external investors and site selectors to secure new business investment and diversify the tax base."}, {"id": "ED-002", "pa": "Economic Development & Tourism", "sa": "Business & Investment Development", "sn": "Business Retention & Expansion", "type": "External", "desc": "Provides outreach and problem-solving support to existing local businesses to help them survive, grow, and remain in the community."}, {"id": "ED-003", "pa": "Economic Development & Tourism", "sa": "Business & Investment Development", "sn": "Downtown Revitalization", "type": "External", "desc": "Coordinates incentives, placemaking, and partnerships to enhance the vibrancy and economic viability of the downtown core."}, {"id": "ED-004", "pa": "Economic Development & Tourism", "sa": "Business & Investment Development", "sn": "Investment Readiness", "type": "Internal", "desc": "Prepares site selection data, land inventories, and investment tools to ensure the municipality is positioned to secure immediate investment opportunities."}, {"id": "ED-005", "pa": "Economic Development & Tourism", "sa": "Economic Strategy & Analytics", "sn": "Economic Strategy & Intelligence", "type": "Internal", "desc": "Develops long-term economic plans and analyzes market trends to guide municipal decision-making and investment priorities."}, {"id": "ED-006", "pa": "Economic Development & Tourism", "sa": "Economic Strategy & Analytics", "sn": "Workforce Development Support", "type": "Internal", "desc": "Collaborates with employers and post-secondary institutions to address labour market gaps and attract skilled talent to the region."}, {"id": "ED-007", "pa": "Economic Development & Tourism", "sa": "Tourism & Visitor Services", "sn": "Tourism Development", "type": "External", "desc": "Develops tourism products, experiences, and destination marketing campaigns to increase visitor attraction and spending."}, {"id": "ED-008", "pa": "Economic Development & Tourism", "sa": "Tourism & Visitor Services", "sn": "Visitor Information Services", "type": "External", "desc": "Operates visitor centers and digital platforms to provide guests with travel assistance, extending their stay and local spending."}, {"id": "EMS-001", "pa": "Emergency Management & Safety", "sa": "Emergency Management Office", "sn": "Disaster Preparedness Training", "type": "Internal", "desc": "Delivers training and exercises (mock disasters) to municipal staff and partners to ensure organizational readiness for emergency response."}, {"id": "EMS-002", "pa": "Emergency Management & Safety", "sa": "Emergency Management Office", "sn": "Public Alerting Systems", "type": "External", "desc": "Manages emergency notification systems to provide timely, accurate, and life-saving information to the public during critical incidents."}, {"id": "EMS-003", "pa": "Emergency Management & Safety", "sa": "Emergency Management Office", "sn": "Risk Assessment & Continuity Planning", "type": "Internal", "desc": "Identifies community hazards and develops business continuity plans to ensure critical municipal services can function during disruptions."}, {"id": "EMS-004", "pa": "Emergency Management & Safety", "sa": "Emergency Management Office", "sn": "Evacuation Planning", "type": "Internal", "desc": "Develops and tests comprehensive evacuation routes and reception centre protocols to ensure the safe displacement of residents during large-scale emergencies."}, {"id": "EMS-005", "pa": "Emergency Management & Safety", "sa": "Emergency Management Office", "sn": "Emergency Operations Centre Management", "type": "Internal", "desc": "Maintains the readiness of the Emergency Operations Centre (EOC) facility, technology, and procedures to ensure coordinated incident command during disasters."}, {"id": "LIB-001", "pa": "Library & Cultural Services", "sa": "Culture & Heritage", "sn": "Cultural Programming", "type": "External", "desc": "Delivers arts exhibitions, public art, and cultural events to enrich community vibrancy and support local creative expression."}, {"id": "LIB-002", "pa": "Library & Cultural Services", "sa": "Culture & Heritage", "sn": "Museum & Heritage Services", "type": "External", "desc": "Preserves and displays local history through archives, exhibits, and educational tours to foster a sense of place and community identity."}, {"id": "LIB-003", "pa": "Library & Cultural Services", "sa": "Library Services", "sn": "Library Lending Services", "type": "External", "desc": "Manages the acquisition and lending of physical collections (books, kits, equipment) to promote literacy and lifelong learning."}, {"id": "LIB-004", "pa": "Library & Cultural Services", "sa": "Library Services", "sn": "Digital Library Services", "type": "External", "desc": "Provides 24/7 access to e-books, databases, and streaming platforms to ensure equitable access to information and technology."}, {"id": "LIB-005", "pa": "Library & Cultural Services", "sa": "Library Services", "sn": "Literacy & Learning Programs", "type": "External", "desc": "Delivers educational workshops, storytimes, and digital skills training to foster literacy and social inclusion for all ages."}, {"id": "PD-010", "pa": "Planning & Development", "sa": "Development Services", "sn": "Business Licensing", "type": "External", "desc": "Administers business licenses to ensure all commercial operators meet safety, zoning, and regulatory requirements."}, {"id": "PD-001", "pa": "Planning & Development", "sa": "Development Services", "sn": "Building & Safety Codes", "type": "External", "desc": "Reviews plans and conducts safety code inspections to ensure all construction meets provincial safety and building standards."}, {"id": "PD-002", "pa": "Planning & Development", "sa": "Development Services", "sn": "Development Approvals", "type": "External", "desc": "Reviews and approves development permits and subdivision applications to ensure land development aligns with municipal bylaws and statutory plans.\""}, {"id": "PD-008", "pa": "Planning & Development", "sa": "Development Services", "sn": "Development Site Engineering", "type": "Internal", "desc": "Reviews civil design drawings (lot grading, water, sewer, storm) for new developments to ensure compliance with municipal servicing standards."}, {"id": "PD-011", "pa": "Planning & Development", "sa": "Development Services", "sn": "Zoning & Compliance", "type": "Internal", "desc": "Investigates and resolves complaints regarding land use bylaw infractions to maintain community standards."}, {"id": "PD-004", "pa": "Planning & Development", "sa": "Planning & Policy & Growth", "sn": "Current Planning & Zoning", "type": "External", "desc": "Processes rezoning applications and subdivision requests to ensure development aligns with community standards and bylaws."}, {"id": "PD-005", "pa": "Planning & Development", "sa": "Planning & Policy & Growth", "sn": "Long Range Planning", "type": "Internal", "desc": "Develops statutory plans (MDP, ASPs) to guide future growth, land use, and infrastructure investment decisions."}, {"id": "PS-004", "pa": "Protective Services", "sa": "Emergency Medical Services", "sn": "Ambulance Liaison & Support", "type": "External", "desc": "Coordinates with provincial health authorities to advocate for effective local ambulance coverage and integrated emergency response."}, {"id": "PS-005", "pa": "Protective Services", "sa": "Fire Services", "sn": "Fire Suppression & Rescue", "type": "External", "desc": "Responds to fires, motor vehicle accidents, and medical emergencies to protect life, property, and the environment."}, {"id": "PS-006", "pa": "Protective Services", "sa": "Fire Services", "sn": "Fire Prevention & Safety", "type": "External", "desc": "Conducts inspections, investigations, and public education to reduce the frequency and severity of fire incidents."}, {"id": "PS-001", "pa": "Protective Services", "sa": "Municipal Enforcement", "sn": "Bylaw Administration & Permitting", "type": "External", "desc": "Administers bylaw tickets, permits (e.g., alarms, noise), and appeals to ensure fair and efficient regulatory processing."}, {"id": "PS-002", "pa": "Protective Services", "sa": "Municipal Enforcement", "sn": "Animal Control Services", "type": "External", "desc": "Manages domestic animal licensing, complaints, and sheltering to promote responsible pet ownership and public safety."}, {"id": "PS-003", "pa": "Protective Services", "sa": "Municipal Enforcement", "sn": "Municipal Enforcement Operations", "type": "External", "desc": "Enforces municipal bylaws and provincial statutes (e.g., traffic, noise, unsightly premises) to maintain community safety and standards."}, {"id": "PS-007", "pa": "Protective Services", "sa": "Policing Services", "sn": "Policing Services", "type": "External", "desc": "Delivers law enforcement, crime prevention, and public order services to ensure a safe and secure community."}, {"id": "PH-003", "pa": "Public Health & Social Services", "sa": "Housing & Health", "sn": "Housing & Homelessness Solutions", "type": "External", "desc": "Coordinates housing subsidies, shelter partnerships, and navigation services to address housing insecurity and homelessness."}, {"id": "PH-004", "pa": "Public Health & Social Services", "sa": "Housing & Health", "sn": "Community Health Liaison", "type": "External", "desc": "Facilitates partnerships with provincial health authorities and connects residents to local health resources and information."}, {"id": "PH-001", "pa": "Public Health & Social Services", "sa": "Social & Family Services", "sn": "Family & Community Support Services (FCSS)", "type": "External", "desc": "Delivers preventive social programs, counseling, and outreach (e.g., youth, seniors) to enhance individual resiliency and community well-being."}, {"id": "PH-002", "pa": "Public Health & Social Services", "sa": "Social & Family Services", "sn": "Community Inclusion & Financial Support", "type": "External", "desc": "Administers subsidy programs and accessibility initiatives to ensure low-income and diverse residents can fully participate in community life."}, {"id": "PW-001", "pa": "Public Works & Infrastructure", "sa": "Engineering & Capital Support", "sn": "Capital Project Management", "type": "Internal", "desc": "Manages the design, procurement, and construction of major municipal infrastructure projects to ensure they are delivered on time, on budget, and to specification."}, {"id": "PW-002", "pa": "Public Works & Infrastructure", "sa": "Engineering & Capital Support", "sn": "Traffic Planning & Approvals", "type": "Internal", "desc": "Analyzes Traffic Impact Assessments (TIAs) and access designs to manage the impact of new development on the municipal road network and traffic flow."}, {"id": "PW-003", "pa": "Public Works & Infrastructure", "sa": "Fleet Services", "sn": "Fleet Management", "type": "Internal", "desc": "Procures, maintains, and repairs the municipal vehicle and equipment fleet to ensure operational readiness for all departments."}, {"id": "PW-004", "pa": "Public Works & Infrastructure", "sa": "Roads & Transportation Infrastructure", "sn": "Snow & Ice Control", "type": "External", "desc": "Delivers winter road maintenance, including plowing, sanding, and removal, to ensure safe mobility during winter weather events."}, {"id": "PW-005", "pa": "Public Works & Infrastructure", "sa": "Roads & Transportation Infrastructure", "sn": "Traffic Safety Infrastructure", "type": "External", "desc": "Maintains traffic signals, streetlights, and signage to regulate traffic flow and improve visibility for all road users."}, {"id": "PW-006", "pa": "Public Works & Infrastructure", "sa": "Roads & Transportation Infrastructure", "sn": "Road Network Management", "type": "External", "desc": "Delivers comprehensive maintenance (paving, pothole repair, sweeping, grading) to extend the lifecycle of municipal roadways and ensuring safe travel."}, {"id": "PW-007", "pa": "Public Works & Infrastructure", "sa": "Roads & Transportation Infrastructure", "sn": "Active Pathways Maintenance", "type": "External", "desc": "Maintains sidewalks, trails, and pathways (snow clearing, repairs) to ensure safe and accessible active transportation networks."}, {"id": "PW-008", "pa": "Public Works & Infrastructure", "sa": "Stormwater Management", "sn": "Stormwater Drainage", "type": "External", "desc": "Operates and maintains the storm sewer system, ponds, and culverts to manage surface water runoff and prevent localized flooding."}, {"id": "TRN-001", "pa": "Transportation", "sa": "Transit Services", "sn": "Public Transit Operations", "type": "External", "desc": "Operates fixed-route bus services and manages fare systems to provide affordable, reliable mobility options for the community."}, {"id": "TRN-002", "pa": "Transportation", "sa": "Transit Services", "sn": "Transit Fleet Maintenance", "type": "Internal", "desc": "Maintains and repairs transit vehicles to ensure safety, reliability, and regulatory compliance of the bus fleet."}, {"id": "TRN-003", "pa": "Transportation", "sa": "Transit Services", "sn": "Accessible Transit Services", "type": "External", "desc": "Delivers specialized door-to-door transportation for residents with mobility limitations to ensure equitable access to essential services and community life."}, {"id": "TRN-004", "pa": "Transportation", "sa": "Transportation Planning & Regulation", "sn": "Parking & Mobility Regulation", "type": "External", "desc": "Manages public parking assets and regulates vehicles-for-hire to ensure equitable curbside access and passenger safety."}, {"id": "TRN-005", "pa": "Transportation", "sa": "Transportation Planning & Regulation", "sn": "Traffic Safety Programs", "type": "External", "desc": "Delivers education campaigns and analyzes collision data to improve driver behavior and road safety outcomes."}, {"id": "TRN-006", "pa": "Transportation", "sa": "Transportation Planning & Regulation", "sn": "Transportation Planning", "type": "Internal", "desc": "Develops long-term network plans for roads, transit, and active pathways to accommodate growth and multimodal connectivity."}, {"id": "UT-001", "pa": "Utilities & Environmental Services", "sa": "Utility Administration", "sn": "Utility Account Services", "type": "External", "desc": "Manages customer accounts, billing, and connection requests to ensure revenue recovery and responsive service."}, {"id": "UT-002", "pa": "Utilities & Environmental Services", "sa": "Utility Administration", "sn": "Utility Engineering & Planning", "type": "Internal", "desc": "Plans long-term utility infrastructure upgrades and modeling to accommodate growth and regulatory changes."}, {"id": "UT-003", "pa": "Utilities & Environmental Services", "sa": "Waste Management", "sn": "Waste Management & Diversion", "type": "External", "desc": "Provides curbside collection and depot services for garbage, recycling, and organics to minimize landfill impact."}, {"id": "UT-004", "pa": "Utilities & Environmental Services", "sa": "Wastewater Services", "sn": "Wastewater Utility", "type": "External", "desc": "Collects and treats sanitary sewage to protect public health and the environment while preventing basement backups."}, {"id": "UT-005", "pa": "Utilities & Environmental Services", "sa": "Water Services", "sn": "Potable Water Utility", "type": "External", "desc": "Operates treatment plants, reservoirs, and distribution networks to provide a safe, continuous supply of drinking water and fire protection (hydrants)."}, {"id": "UT-006", "pa": "Utilities & Environmental Services", "sa": "Water Services", "sn": "Water Metering & Efficiency", "type": "External", "desc": "Manages water meters, cross-connection control (backflow), and conservation programs to ensure accurate billing and system integrity."}];
+
+const PA_COLORS = {
+  "Community Services":"#1D9E75","Corporate Services":"#7F77DD",
+  "Council & Administrative Leadership":"#D85A30","Economic Development & Tourism":"#BA7517",
+  "Emergency Management & Safety":"#E24B4A","Library & Cultural Services":"#D4537E",
+  "Planning & Development":"#378ADD","Protective Services":"#639922",
+  "Public Health & Social Services":"#0F6E56","Public Works & Infrastructure":"#888780",
+  "Transportation":"#534AB7","Utilities & Environmental Services":"#185FA5"
+};
+const PA_ABBR = {
+  "Community Services":"CS","Corporate Services":"COR",
+  "Council & Administrative Leadership":"CAO","Economic Development & Tourism":"ED",
+  "Emergency Management & Safety":"EMS","Library & Cultural Services":"LIB",
+  "Planning & Development":"PD","Protective Services":"PS",
+  "Public Health & Social Services":"PH","Public Works & Infrastructure":"PW",
+  "Transportation":"TRN","Utilities & Environmental Services":"UT"
+};
+
+const OPTS = {
+  isProvided:[
+    {v:"ACTIVE",d:"We provide this service directly or indirectly. If we stopped today, people would notice."},
+    {v:"NOT PROVIDED",d:"Zero involvement. No role, no funding, and no authority here."},
+    {v:"DIVESTED",d:"Past tense. We used to do this but formally stopped or handed it over to another body."},
+    {v:"FUTURE / GAP",d:"A known void. We do not do it now but Council has expressed a desire to start."},
+  ],
+  deliveryMethod:[
+    {v:"Counter / In-Person",d:"High Touch. Resident must physically come to a desk/office. $$$$ High cost. Prime target for digitization."},
+    {v:"Field / Mobile",d:"We go to them. Staff travels to the resident or asset location. $$$$ High. High labour and Fleet/Fuel costs."},
+    {v:"Facility-Based",d:"The Building is the Service. Resident uses an asset without direct staff instruction. $$$ High Fixed costs."},
+    {v:"Phone / Email",d:"Remote Assisted. Not face-to-face but requires manual staff intervention. $$ Medium cost."},
+    {v:"Digital / Self-Serve",d:"Zero Touch. Resident completes the entire transaction without staff intervention. $ Low. Scalable."},
+    {v:"Indirect / Internal",d:"Support Service. No direct public interaction. Supports other departments."},
+    {v:"Other",d:""},
+  ],
+  deliveryProvider:[
+    {v:"In-House Staff",d:"Town employees perform the core function. Capacity Risk if one-deep."},
+    {v:"Contracted Service",d:"A private 3rd party delivers for a fee. Risk: Cost escalation or loss of quality control."},
+    {v:"Shared Service",d:"Delivered in partnership with another Municipality or Regional Commission. Governance Risk."},
+    {v:"Agency / Board",d:"Delivered by a separate legal entity or non-profit board (e.g. Library Board, FCSS). Alignment Risk."},
+    {v:"Volunteer / Partner",d:"Delivered primarily by unpaid community groups. Burnout Risk."},
+    {v:"Other",d:""},
+  ],
+  relevance:[
+    {v:"HIGH (Core)",c:"green",d:"Statutory Requirement AND/OR Essential/Broad Benefit used by >80% of residents AND/OR directly advances a top Council goal."},
+    {v:"MEDIUM (Important)",c:"yellow",d:"Required by our own Bylaw or needed to support a Core service. Valued by a significant segment."},
+    {v:"LOW (Discretionary)",c:"red",d:"Discretionary. No legal requirement. Benefits a small or specific group. Neutral or misaligned with current vision."},
+    {v:"Other",c:"",d:""},
+  ],
+  effectiveness:[
+    {v:"GREEN (Stable)",c:"green",d:"Consistently meets targets (>95% of time). Silent Approval. Rare complaints. No critical gaps."},
+    {v:"YELLOW (Strained)",c:"yellow",d:"Inconsistent. Meets standards most days but fails during peaks or absences. Escalating noise. Managed gaps."},
+    {v:"RED (Failing)",c:"red",d:"Frequent failure. Active frustration. Formal grievances, safety concerns, or negative media. Unmanaged critical gaps."},
+    {v:"Other",c:"",d:""},
+  ],
+  efficiency:[
+    {v:"GREEN (Sustainable)",c:"green",d:"Resilient staffing with cross-trained backups. Fully funded. Equipment is reliable and modern."},
+    {v:"YELLOW (Strained)",c:"yellow",d:"One-Deep Risk. Aging or under-funded assets. Manual workarounds instead of proper tools."},
+    {v:"RED (Critical)",c:"red",d:"Burnout or Vacancy. Critical positions unfilled. Obsolete or deficit assets. Consistently over-budget."},
+    {v:"Other",c:"",d:""},
+  ],
+  gapCategory:[
+    {v:"N/A (Service is Good)",d:""},
+    {v:"Capacity (Staffing)",d:"We do not have enough hours or bodies."},
+    {v:"Asset / Equipment",d:"The tools, vehicles, or buildings are broken or missing."},
+    {v:"Financial (Budget)",d:"We have the staff and assets but no operating dollars for materials or supplies."},
+    {v:"Process / Policy",d:"We are blocked by bureaucracy, red tape, or bad bylaws."},
+    {v:"Skill / Training",d:"We have the people but they do not know how to do it."},
+    {v:"Technology",d:"We are inefficient because we lack software or digital tools."},
+    {v:"External Factor",d:"The problem is caused by the Province, a partner, or weather (out of our control)."},
+  ],
+  strategicDirection:[
+    {v:"Maintain (Status Quo)",d:"Service is healthy. Keep doing what we are doing."},
+    {v:"Monitor",d:"Service is Yellow but stable. No money needed yet, just watch it."},
+    {v:"Invest (Resource)",d:"We need to add money, staff, or assets to fix a gap."},
+    {v:"Transform (Efficiency)",d:"We need to change how we deliver it (e.g. Go Digital, Shared Service) before we add money."},
+    {v:"Reduce / Divest",d:"We should stop doing this or lower the service level."},
+    {v:"Review Required",d:"Complex problem. Needs a dedicated study (e.g. Master Plan)."},
+  ],
+};
+
+const EMPTY = {isProvided:"",subName:"",deliverables:"",deliveryMethod:"",deliveryProvider:"",relevance:"",effectiveness:"",efficiency:"",gapCategory:"",gapDetails:"",strategicDirection:"",stratNotes:""};
+
+/* ---- Tiny components ---- */
+function FSelect({opts, val, onChange, disabled}) {
+  return (
+    <select value={val} onChange={e => onChange(e.target.value)} disabled={disabled} style={{fontFamily:"inherit",fontSize:12,padding:"7px 10px",border:"1px solid rgba(13,27,46,.15)",borderRadius:5,color:"#0d1b2e",background:disabled?"#f2f5f9":"#fff",outline:"none",width:"100%",cursor:disabled?"not-allowed":"pointer"}}>
+      <option value="">— Select —</option>
+      {opts.map(o => <option key={o.v} value={o.v}>{o.v}</option>)}
+    </select>
+  );
+}
+
+function DefBox({opts, val}) {
+  const opt = opts.find(o => o.v === val);
+  if (!opt || !opt.d) return null;
+  return <div style={{fontSize:11,color:"#7a99b8",background:"#f2f5f9",border:"1px solid rgba(13,27,46,.08)",borderRadius:5,padding:"6px 9px",marginTop:4,lineHeight:1.5}}>{opt.d}</div>;
+}
+
+function Pills({opts, val, onChange, disabled}) {
+  const colorMap = {
+    green: {bg:"rgba(29,158,117,.14)",br:"#1d9e75",tx:"#0f6b50"},
+    yellow:{bg:"rgba(240,165,0,.14)",br:"#f0a500",tx:"#8a5e00"},
+    red:   {bg:"rgba(232,84,84,.14)",br:"#e85454",tx:"#b03030"},
+  };
+  return (
+    <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+      {opts.map(o => {
+        const selected = val === o.v;
+        const cm = colorMap[o.c] || null;
+        const style = selected && cm
+          ? {padding:"5px 12px",borderRadius:20,border:`1.5px solid ${cm.br}`,background:cm.bg,color:cm.tx,fontFamily:"inherit",fontSize:11,cursor:"pointer",fontWeight:500}
+          : {padding:"5px 12px",borderRadius:20,border:"1.5px solid rgba(13,27,46,.15)",background:"transparent",color:"#7a99b8",fontFamily:"inherit",fontSize:11,cursor:"pointer"};
+        return (
+          <button key={o.v} style={style} onClick={() => !disabled && onChange(o.v)} disabled={disabled}>
+            {o.v}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function RagBadge({val}) {
+  if (!val) return <span style={{color:"#7a99b8"}}>—</span>;
+  const u = val.toUpperCase();
+  let bg="#d8e6f0",tx="#7a99b8";
+  if (u.includes("GREEN")||u.includes("HIGH")||u.includes("CORE")) { bg="rgba(29,158,117,.12)"; tx="#0f6b50"; }
+  else if (u.includes("YELLOW")||u.includes("MEDIUM")) { bg="rgba(240,165,0,.12)"; tx="#8a5e00"; }
+  else if (u.includes("RED")||u.includes("LOW")) { bg="rgba(232,84,84,.12)"; tx="#b03030"; }
+  return <span style={{display:"inline-block",padding:"1px 7px",borderRadius:10,fontSize:10,background:bg,color:tx}}>{val}</span>;
+}
+
+/* ---- Main app ---- */
+function App() {
+  const [assessments, setAssessments] = useState({});
+  const [curId, setCurId]   = useState(null);
+  const [tab, setTab]       = useState("form");
+  const [paFilter, setPAF]  = useState("all");
+  const [search, setSearch] = useState("");
+  const [form, setForm]     = useState({...EMPTY});
+  const [savedMsg, setSaved]= useState(false);
+
+  const pas = useMemo(() => [...new Set(SERVICES.map(s => s.pa))].sort(), []);
+
+  const filtered = useMemo(() => SERVICES.filter(s => {
+    const mPA = paFilter === "all" || s.pa === paFilter;
+    const mS  = !search || (s.sn+s.sa+s.pa+s.id).toLowerCase().includes(search.toLowerCase());
+    return mPA && mS;
+  }), [paFilter, search]);
+
+  const grouped = useMemo(() => {
+    const g={}, order=[];
+    filtered.forEach(s => { if (!g[s.pa]) { g[s.pa]=[]; order.push(s.pa); } g[s.pa].push(s); });
+    return {g, order};
+  }, [filtered]);
+
+  const allVals   = Object.values(assessments);
+  const done      = allVals.filter(a => a.isProvided).length;
+  const pct       = Math.round(done / SERVICES.length * 100);
+  const activeList= allVals.filter(a => a.isProvided === "ACTIVE");
+  const nNot      = allVals.filter(a => a.isProvided === "NOT PROVIDED").length;
+  const nDiv      = allVals.filter(a => a.isProvided === "DIVESTED").length;
+  const nFut      = allVals.filter(a => a.isProvided === "FUTURE / GAP").length;
+  const nRed      = allVals.filter(a => a.effectiveness && a.effectiveness.includes("RED")).length;
+  const nYel      = allVals.filter(a => a.effectiveness && a.effectiveness.includes("YELLOW")).length;
+
+  const selectSvc = useCallback(id => {
+    setCurId(id);
+    setTab("form");
+    setSaved(false);
+    setForm(prev => {
+      const existing = assessments[id];
+      return existing ? {...EMPTY, ...existing} : {...EMPTY};
+    });
+  }, [assessments]);
+
+  // When assessments changes and curId is set, keep form in sync only on initial load
+  const ff = k => v => setForm(prev => ({...prev, [k]: v}));
+
+  const saveForm = () => {
+    if (!curId) return;
+    const svc = SERVICES.find(s => s.id === curId);
+    const rec = {
+      ...form,
+      serviceId:curId, programArea:svc.pa, serviceArea:svc.sa,
+      serviceName:svc.sn, serviceType:svc.type,
+      savedAt: new Date().toISOString()
+    };
+    setAssessments(prev => {
+      const next = {...prev, [curId]: rec};
+      return next;
+    });
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2500);
+  };
+
+  const nextSvc = () => {
+    const idx = SERVICES.findIndex(s => s.id === curId);
+    if (idx < SERVICES.length - 1) selectSvc(SERVICES[idx+1].id);
+  };
+
+  const exportCSV = () => {
+    const h = ["Service_ID","Program_Area","Service_Area","Service_Name","Service_Type","Is_Service_Provided","Sub_Name","Deliverables","Delivery_Method","Delivery_Provider","Relevance","Effectiveness","Efficiency","Gap_Category","GAP_Details","Strategic_Direction","Strategic_Notes","Saved_At"];
+    const rows = [h.join(",")];
+    SERVICES.forEach(svc => {
+      const a = assessments[svc.id] || {};
+      const cells = [svc.id,svc.pa,svc.sa,svc.sn,svc.type,
+        a.isProvided||"",a.subName||"",a.deliverables||"",
+        a.deliveryMethod||"",a.deliveryProvider||"",
+        a.relevance||"",a.effectiveness||"",a.efficiency||"",
+        a.gapCategory||"",a.gapDetails||"",
+        a.strategicDirection||"",a.stratNotes||"",a.savedAt||""];
+      rows.push(cells.map(v => `"${String(v).replace(/"/g, '""')}"`).join(","));
+    });
+    const blob = new Blob([rows.join("\r\n")], {type:"text/csv;charset=utf-8"});
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href = url; a.download = `MSRF_Assessment_${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const resetAll = () => {
+    if (window.confirm("Reset ALL assessment data? This cannot be undone.")) {
+      setAssessments({}); setCurId(null); setForm({...EMPTY}); setTab("form");
+    }
+  };
+
+  const curSvc = SERVICES.find(s => s.id === curId);
+  const locked = !!(form.isProvided && form.isProvided !== "ACTIVE");
+
+  /* ---- Styles (inline for portability) ---- */
+  const C = {
+    app:    {display:"flex",flexDirection:"column",height:"100vh"},
+    topbar: {background:"#0d1b2e",borderBottom:"2px solid #c9a84c",padding:"0 20px",height:56,display:"flex",alignItems:"center",gap:12,flexShrink:0,flexWrap:"wrap"},
+    bmark:  {width:32,height:32,background:"linear-gradient(135deg,#c9a84c,#e8c96a)",borderRadius:7,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Georgia,serif",fontSize:15,fontWeight:700,color:"#0d1b2e",flexShrink:0},
+    body:   {display:"flex",flex:1,overflow:"hidden"},
+    sidebar:{width:280,background:"#fff",borderRight:"1px solid rgba(13,27,46,.1)",display:"flex",flexDirection:"column",overflow:"hidden",flexShrink:0},
+    svcList:{overflowY:"auto",flex:1},
+    main:   {flex:1,overflowY:"auto",padding:24},
+  };
+
+  return (
+    <div style={C.app}>
+      {/* ── Topbar ── */}
+      <div style={C.topbar}>
+        <div style={C.bmark}>M</div>
+        <div>
+          <div style={{fontFamily:"Georgia,serif",fontSize:15,fontWeight:500,color:"#f0ede8",lineHeight:1.1}}>MSRF Service Assessment</div>
+          <div style={{fontSize:10,color:"#8faec8",letterSpacing:"0.06em",textTransform:"uppercase"}}>Municipal Service Review Framework</div>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:8,marginLeft:"auto"}}>
+          <span style={{fontSize:11,color:"#8faec8"}}>{done} / {SERVICES.length}</span>
+          <div style={{width:100,height:4,background:"rgba(255,255,255,.12)",borderRadius:2,overflow:"hidden"}}>
+            <div style={{height:"100%",background:"#c9a84c",borderRadius:2,width:`${pct}%`,transition:"width .3s"}}/>
+          </div>
+        </div>
+        <button onClick={() => { setCurId(null); setTab("summary"); }} style={{padding:"5px 12px",fontFamily:"inherit",fontSize:11,borderRadius:5,border:"1px solid rgba(255,255,255,.2)",background:"transparent",color:"rgba(255,255,255,.7)",cursor:"pointer"}}>&#128202; Summary</button>
+        <button onClick={exportCSV} style={{padding:"5px 12px",fontFamily:"inherit",fontSize:11,borderRadius:5,border:"1px solid #c9a84c",background:"#c9a84c",color:"#0d1b2e",cursor:"pointer",fontWeight:500}}>&darr; Export CSV</button>
+        <button onClick={resetAll} style={{padding:"4px 10px",fontFamily:"inherit",fontSize:10,borderRadius:5,border:"1px solid rgba(232,84,84,.4)",background:"transparent",color:"rgba(232,84,84,.8)",cursor:"pointer"}}>Reset</button>
+      </div>
+
+      <div style={C.body}>
+        {/* ── Sidebar ── */}
+        <div style={C.sidebar}>
+          <div style={{padding:"12px 14px",borderBottom:"1px solid rgba(13,27,46,.08)",flexShrink:0}}>
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search services…"
+              style={{width:"100%",padding:"7px 10px",fontFamily:"inherit",fontSize:12,border:"1px solid rgba(13,27,46,.15)",borderRadius:5,outline:"none",background:"#f2f5f9",color:"#0d1b2e",boxSizing:"border-box"}}/>
+            <div style={{display:"flex",flexWrap:"wrap",gap:4,marginTop:8}}>
+              {["all",...pas].map(pa => {
+                const on = paFilter === pa;
+                return <button key={pa} onClick={() => setPAF(pa)} title={pa} style={{padding:"3px 8px",fontSize:10,borderRadius:20,border:"1px solid rgba(13,27,46,.15)",background:on?"#0d1b2e":"transparent",color:on?"#fff":"#7a99b8",cursor:"pointer",fontFamily:"inherit"}}>
+                  {pa === "all" ? "All" : (PA_ABBR[pa] || pa.slice(0,3))}
+                </button>;
+              })}
+            </div>
+          </div>
+          <div style={{padding:"7px 14px",borderBottom:"1px solid rgba(13,27,46,.08)",display:"flex",gap:10,fontSize:11,color:"#7a99b8",flexShrink:0,flexWrap:"wrap"}}>
+            <span>&#x1F7E2; {activeList.length} Active</span>
+            <span>&#x26AA; {nNot+nDiv} Not Provided</span>
+            <span>&#x1F7E1; {nFut} Future</span>
+          </div>
+          <div style={C.svcList}>
+            {grouped.order.map(pa => (
+              <div key={pa}>
+                <div style={{padding:"7px 14px 4px",fontSize:10,textTransform:"uppercase",letterSpacing:"0.07em",color:"#7a99b8",background:"#f2f5f9",borderBottom:"1px solid rgba(13,27,46,.07)",borderLeft:`3px solid ${PA_COLORS[pa]||"#888"}`}}>{pa}</div>
+                {grouped.g[pa].map(svc => {
+                  const a  = assessments[svc.id];
+                  const st = a?.isProvided || "";
+                  const dotBg = st==="ACTIVE"?"#1d9e75":st==="NOT PROVIDED"?"#fff":st==="DIVESTED"?"#888":st==="FUTURE / GAP"?"#f0a500":"#d8e6f0";
+                  const dotBr = st==="NOT PROVIDED"?"#888":dotBg;
+                  const active = curId === svc.id;
+                  return (
+                    <div key={svc.id} onClick={() => selectSvc(svc.id)}
+                      style={{padding:"8px 12px",borderBottom:"1px solid rgba(13,27,46,.07)",cursor:"pointer",display:"flex",alignItems:"center",gap:8,background:active?"rgba(74,111,165,.08)":"transparent",borderLeft:active?"3px solid #4a6fa5":"3px solid transparent"}}>
+                      <div style={{width:8,height:8,borderRadius:"50%",background:dotBg,border:`1.5px solid ${dotBr}`,flexShrink:0}} title={st||"Not assessed"}/>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:12,color:active?"#4a6fa5":"#0d1b2e",fontWeight:active?500:400,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{svc.sn}</div>
+                        <div style={{fontSize:10,color:"#7a99b8"}}>{svc.id} &middot; {svc.sa}</div>
+                      </div>
+                      <span style={{fontSize:9,padding:"1px 5px",borderRadius:3,flexShrink:0,background:svc.type==="External"?"rgba(29,158,117,.12)":svc.type==="Internal"?"rgba(127,119,221,.12)":"rgba(240,165,0,.12)",color:svc.type==="External"?"#0f6b50":svc.type==="Internal"?"#534ab7":"#8a5e00"}}>
+                        {svc.type==="External"?"EXT":svc.type==="Internal"?"INT":"OP"}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Main ── */}
+        <div style={C.main}>
+          {!curId && tab !== "summary" && (
+            <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",height:"80%",textAlign:"center",gap:12,color:"#7a99b8",padding:40}}>
+              <div style={{fontSize:48,opacity:.3}}>&#128203;</div>
+              <h2 style={{fontFamily:"Georgia,serif",fontSize:20,fontWeight:400,color:"#0d1b2e"}}>MSRF Service Assessment Tool</h2>
+              <p style={{maxWidth:420,lineHeight:1.7}}>Select a service from the list on the left to begin. All data is held in memory during this session — use <strong>Export CSV</strong> to save your work before closing.</p>
+            </div>
+          )}
+
+          {(curId || tab === "summary") && (
+            <>
+              <div style={{display:"flex",borderBottom:"1px solid rgba(13,27,46,.1)",marginBottom:20}}>
+                {[["form","Assessment Form"],["summary","Summary Dashboard"]].map(([t,l]) => (
+                  <button key={t} onClick={() => setTab(t)} style={{padding:"7px 16px",fontSize:12,cursor:"pointer",borderBottom:tab===t?"2px solid #0d1b2e":"2px solid transparent",color:tab===t?"#0d1b2e":"#7a99b8",fontFamily:"inherit",background:"none",border:"none",borderBottom:tab===t?"2px solid #0d1b2e":"2px solid transparent"}}>{l}</button>
+                ))}
+              </div>
+
+              {/* ── Form ── */}
+              {tab === "form" && curSvc && (
+                <div style={{maxWidth:800}}>
+                  {/* Header */}
+                  <div style={{marginBottom:20,paddingBottom:14,borderBottom:"1px solid rgba(13,27,46,.08)"}}>
+                    <div style={{fontFamily:"Georgia,serif",fontSize:19,fontWeight:500,color:"#0d1b2e",lineHeight:1.2}}>{curSvc.sn}</div>
+                    <div style={{display:"flex",gap:6,marginTop:6,flexWrap:"wrap"}}>
+                      {[{l:curSvc.pa,c:PA_COLORS[curSvc.pa]},{l:curSvc.sa,c:null},{l:curSvc.id,c:null}].map((b,i) => (
+                        <span key={i} style={{fontSize:10,padding:"2px 7px",borderRadius:4,background:b.c?b.c+"22":"#f2f5f9",color:b.c||"#7a99b8",border:`1px solid ${b.c?b.c+"44":"rgba(13,27,46,.12)"}`}}>{b.l}</span>
+                      ))}
+                    </div>
+                    <div style={{fontSize:12,color:"#7a99b8",marginTop:8,lineHeight:1.6,padding:"8px 10px",background:"#f2f5f9",borderRadius:5,borderLeft:"3px solid #d8e6f0"}}>{curSvc.desc}</div>
+                  </div>
+
+                  {/* Step 1 */}
+                  {[{num:1,title:"Is this Service Provided?",content:(
+                    <>
+                      <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                        <label style={{fontSize:11,color:"#3a567a",fontWeight:500}}>Service Status <span style={{color:"#e85454"}}>*</span></label>
+                        <FSelect opts={OPTS.isProvided} val={form.isProvided} onChange={ff("isProvided")}/>
+                        <DefBox opts={OPTS.isProvided} val={form.isProvided}/>
+                      </div>
+                      <div style={{display:"flex",flexDirection:"column",gap:4,marginTop:10}}>
+                        <label style={{fontSize:11,color:"#3a567a",fontWeight:500}}>Service Sub-Name <span style={{color:"#7a99b8",fontWeight:400}}>(optional)</span></label>
+                        <input value={form.subName} onChange={e=>ff("subName")(e.target.value)} placeholder="e.g. Summer Programming, Road Maintenance…" style={{fontFamily:"inherit",fontSize:12,padding:"7px 10px",border:"1px solid rgba(13,27,46,.15)",borderRadius:5,color:"#0d1b2e",background:"#fff",outline:"none",width:"100%",boxSizing:"border-box"}}/>
+                      </div>
+                    </>
+                  )}].map(sec => (
+                    <div key={sec.num} style={{background:"#fff",border:"1px solid rgba(13,27,46,.09)",borderRadius:8,padding:"16px 18px",marginBottom:12,boxShadow:"0 1px 4px rgba(13,27,46,.05)"}}>
+                      <div style={{fontSize:11,fontWeight:500,textTransform:"uppercase",letterSpacing:"0.07em",color:"#7a99b8",marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
+                        <div style={{width:18,height:18,borderRadius:"50%",background:"#0d1b2e",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,flexShrink:0}}>{sec.num}</div>
+                        {sec.title}
+                      </div>
+                      {sec.content}
+                    </div>
+                  ))}
+
+                  {locked && (
+                    <div style={{background:"#fff8e1",border:"1px solid #f0a500",borderRadius:5,padding:"9px 12px",fontSize:12,color:"#8a5e00",marginBottom:12}}>
+                      This service is marked as <strong>{form.isProvided}</strong>. No further evaluation needed. Change the status above to unlock the full assessment.
+                    </div>
+                  )}
+
+                  {/* Steps 2-6 */}
+                  {[
+                    {num:2,title:"What does this service deliver?",content:(
+                      <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                        <label style={{fontSize:11,color:"#3a567a",fontWeight:500}}>Deliverables / Key Activities</label>
+                        <textarea value={form.deliverables} onChange={e=>ff("deliverables")(e.target.value)} disabled={locked} placeholder="List the main outputs, activities, or tasks…" style={{fontFamily:"inherit",fontSize:12,padding:"7px 10px",border:"1px solid rgba(13,27,46,.15)",borderRadius:5,color:"#0d1b2e",background:locked?"#f2f5f9":"#fff",outline:"none",width:"100%",minHeight:68,resize:"vertical",boxSizing:"border-box"}}/>
+                      </div>
+                    )},
+                    {num:3,title:"How is it delivered?",content:(
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+                        {[["deliveryMethod","Delivery Method"],["deliveryProvider","Delivery Provider"]].map(([k,l]) => (
+                          <div key={k} style={{display:"flex",flexDirection:"column",gap:4}}>
+                            <label style={{fontSize:11,color:"#3a567a",fontWeight:500}}>{l}</label>
+                            <FSelect opts={OPTS[k]} val={form[k]} onChange={ff(k)} disabled={locked}/>
+                            <DefBox opts={OPTS[k]} val={form[k]}/>
+                          </div>
+                        ))}
+                      </div>
+                    )},
+                    {num:4,title:"Health Check",content:(
+                      <>
+                        {[["relevance","Relevance"],["effectiveness","Effectiveness"],["efficiency","Efficiency & Resourcing"]].map(([k,l],i) => (
+                          <div key={k} style={{display:"flex",flexDirection:"column",gap:4,marginBottom:i<2?14:0}}>
+                            <label style={{fontSize:11,color:"#3a567a",fontWeight:500}}>{l}</label>
+                            <Pills opts={OPTS[k]} val={form[k]} onChange={ff(k)} disabled={locked}/>
+                            <DefBox opts={OPTS[k]} val={form[k]}/>
+                          </div>
+                        ))}
+                      </>
+                    )},
+                    {num:5,title:"Gap Analysis",content:(
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+                        <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                          <label style={{fontSize:11,color:"#3a567a",fontWeight:500}}>Gap Category</label>
+                          <FSelect opts={OPTS.gapCategory} val={form.gapCategory} onChange={ff("gapCategory")} disabled={locked}/>
+                          <DefBox opts={OPTS.gapCategory} val={form.gapCategory}/>
+                        </div>
+                        <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                          <label style={{fontSize:11,color:"#3a567a",fontWeight:500}}>GAP Details</label>
+                          <input value={form.gapDetails} onChange={e=>ff("gapDetails")(e.target.value)} disabled={locked} placeholder="Describe the specific gap…" style={{fontFamily:"inherit",fontSize:12,padding:"7px 10px",border:"1px solid rgba(13,27,46,.15)",borderRadius:5,color:"#0d1b2e",background:locked?"#f2f5f9":"#fff",outline:"none",width:"100%",boxSizing:"border-box"}}/>
+                        </div>
+                      </div>
+                    )},
+                    {num:6,title:"Strategic Direction",content:(
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+                        <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                          <label style={{fontSize:11,color:"#3a567a",fontWeight:500}}>Strategic Direction</label>
+                          <FSelect opts={OPTS.strategicDirection} val={form.strategicDirection} onChange={ff("strategicDirection")} disabled={locked}/>
+                          <DefBox opts={OPTS.strategicDirection} val={form.strategicDirection}/>
+                        </div>
+                        <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                          <label style={{fontSize:11,color:"#3a567a",fontWeight:500}}>Strategic Notes</label>
+                          <input value={form.stratNotes} onChange={e=>ff("stratNotes")(e.target.value)} disabled={locked} placeholder="Council direction, flags, notes…" style={{fontFamily:"inherit",fontSize:12,padding:"7px 10px",border:"1px solid rgba(13,27,46,.15)",borderRadius:5,color:"#0d1b2e",background:locked?"#f2f5f9":"#fff",outline:"none",width:"100%",boxSizing:"border-box"}}/>
+                        </div>
+                      </div>
+                    )},
+                  ].map(sec => (
+                    <div key={sec.num} style={{background:"#fff",border:"1px solid rgba(13,27,46,.09)",borderRadius:8,padding:"16px 18px",marginBottom:12,boxShadow:"0 1px 4px rgba(13,27,46,.05)",opacity:locked?.35:1,pointerEvents:locked?"none":"auto"}}>
+                      <div style={{fontSize:11,fontWeight:500,textTransform:"uppercase",letterSpacing:"0.07em",color:"#7a99b8",marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
+                        <div style={{width:18,height:18,borderRadius:"50%",background:"#0d1b2e",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,flexShrink:0}}>{sec.num}</div>
+                        {sec.title}
+                      </div>
+                      {sec.content}
+                    </div>
+                  ))}
+
+                  {/* Footer */}
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:16,paddingTop:14,borderTop:"1px solid rgba(13,27,46,.08)",flexWrap:"wrap",gap:8}}>
+                    <div style={{display:"flex",alignItems:"center",gap:10}}>
+                      <button onClick={saveForm} style={{padding:"8px 20px",fontFamily:"inherit",fontSize:12,fontWeight:500,borderRadius:5,border:"none",background:"#0d1b2e",color:"#fff",cursor:"pointer"}}>
+                        &#128190; Save Assessment
+                      </button>
+                      {savedMsg && (
+                        <span style={{fontSize:11,color:"#1d9e75"}}>
+                          &#10003; Saved &mdash; {Object.keys(assessments).length + 1} records total
+                        </span>
+                      )}
+                    </div>
+                    <button onClick={nextSvc} style={{padding:"7px 14px",fontFamily:"inherit",fontSize:11,borderRadius:5,border:"1px solid rgba(13,27,46,.15)",background:"transparent",color:"#3a567a",cursor:"pointer"}}>
+                      Next Service &rarr;
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* ── Summary ── */}
+              {tab === "summary" && (
+                <div style={{maxWidth:920}}>
+                  <div style={{marginBottom:16}}>
+                    <div style={{fontFamily:"Georgia,serif",fontSize:19,fontWeight:500,marginBottom:4}}>Assessment Summary</div>
+                    <div style={{fontSize:12,color:"#7a99b8"}}>{done} of {SERVICES.length} services assessed &middot; {pct}% complete</div>
+                  </div>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(110px,1fr))",gap:10,marginBottom:18}}>
+                    {[
+                      [SERVICES.length,"Total Services","#0d1b2e"],
+                      [activeList.length,"Active","#1d9e75"],
+                      [nNot,"Not Provided","#7a99b8"],
+                      [nDiv,"Divested","#888"],
+                      [nFut,"Future / Gap","#f0a500"],
+                      [nRed,"RED Services","#e85454"],
+                      [nYel,"YELLOW Services","#f0a500"],
+                    ].map(([n,l,c]) => (
+                      <div key={l} style={{background:"#fff",border:"1px solid rgba(13,27,46,.09)",borderRadius:8,padding:"12px 14px",textAlign:"center",boxShadow:"0 1px 4px rgba(13,27,46,.05)"}}>
+                        <div style={{fontFamily:"Georgia,serif",fontSize:24,fontWeight:500,color:c,lineHeight:1}}>{n}</div>
+                        <div style={{fontSize:10,color:"#7a99b8",letterSpacing:"0.05em",textTransform:"uppercase",marginTop:3}}>{l}</div>
+                      </div>
+                    ))}
+                  </div>
+                  {activeList.length > 0 ? (
+                    <div style={{overflowX:"auto"}}>
+                      <table style={{width:"100%",borderCollapse:"collapse",background:"#fff",borderRadius:8,overflow:"hidden",boxShadow:"0 1px 4px rgba(13,27,46,.06)"}}>
+                        <thead>
+                          <tr>{["ID","Service Name","Program Area","Relevance","Effectiveness","Efficiency","Strategic Direction"].map(h => (
+                            <th key={h} style={{padding:"8px 12px",textAlign:"left",fontSize:10,textTransform:"uppercase",letterSpacing:"0.06em",color:"#7a99b8",background:"#f2f5f9",borderBottom:"1px solid rgba(13,27,46,.08)",whiteSpace:"nowrap"}}>{h}</th>
+                          ))}</tr>
+                        </thead>
+                        <tbody>
+                          {activeList.map((a,i) => (
+                            <tr key={a.serviceId} onClick={() => selectSvc(a.serviceId)} style={{cursor:"pointer",borderBottom:"1px solid rgba(13,27,46,.06)",background:"#fff"}}>
+                              <td style={{padding:"8px 12px",fontSize:11,fontWeight:600,color:"#0d1b2e"}}>{a.serviceId}</td>
+                              <td style={{padding:"8px 12px",fontSize:11,color:"#3a567a",maxWidth:180}}>{a.serviceName}</td>
+                              <td style={{padding:"8px 12px",fontSize:10,color:"#7a99b8"}}>{(a.programArea||"").replace(" & Administrative Leadership","").replace(" & Environmental Services","")}</td>
+                              <td style={{padding:"8px 12px"}}><RagBadge val={a.relevance}/></td>
+                              <td style={{padding:"8px 12px"}}><RagBadge val={a.effectiveness}/></td>
+                              <td style={{padding:"8px 12px"}}><RagBadge val={a.efficiency}/></td>
+                              <td style={{padding:"8px 12px",fontSize:11,color:"#3a567a"}}>{a.strategicDirection||"—"}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div style={{padding:36,textAlign:"center",color:"#7a99b8",background:"#fff",borderRadius:8,border:"1px solid rgba(13,27,46,.09)"}}>
+                      No active services assessed yet. Select services from the sidebar and save them to see results here.
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
